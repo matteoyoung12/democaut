@@ -261,18 +261,18 @@
 </head>
 <body>
 <header>
-  <div class="brand">
-    <div class="logo">CAS</div>
+  <<div class="brand">
+    <div href="#" class="logo">CAS</div>
     <div>
-      <div class="title">⚜️BLATNAЯ FAMILY ⚜️</div>
+      <div  class="title">⚜️BLATNAЯ FAMILY ⚜️</div>
       <div class="subtitle">Демо-версия — только для развлечения</div>
     </div>
   </div>
-
+  
   <div class="controls">
     <div class="balance" id="balanceBox">Баланс: <span id="balance">1000</span> <span class="small muted">$</span></div>
     <input type="number" id="betInput" min="1" value="10" />
-    <button id="giveBonus">Бонус +100</button>
+    <button id="giveBonus"></button>
   </div>
 </header>
 
@@ -284,6 +284,8 @@
       <div class="game-item" data-game="baccarat"><div class="thumb">BA</div><div><strong>Baccarat</strong><div class="muted">Играй на сторону игрока/банка</div></div></div>
       <div class="game-item" data-game="slot"><div class="thumb">Slot</div><div><strong>Slot 3×5</strong><div class="muted">5 барабанов, 3 ряда, 20 линий</div></div></div>
       <div class="game-item" data-game="wheel"><div class="thumb">Wheel</div><div><strong>Колесо фортуны</strong><div class="muted">Умножители и шанс</div></div></div>
+      <div class="game-item" data-game="plinko"><div class="thumb">PL</div><div><strong>Plinko</strong><div class="muted">Игра с мячиками и платформами</div></div></div>
+      <div class="game-item" data-game="miner"><div class="thumb">PL</div><div><strong>Miner Новый режим</strong><div class="muted">Не попади на мину</div></div></div>
     </div>
 
     <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
@@ -392,13 +394,67 @@
           </div>
         </div>
       </section>
+     <!-- Plinko -->
+<section id="plinko" class="panelView" style="display:none">
+  <div>
+    <h3>Plinko — игра с мячиками и платформами</h3>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <!-- Игровое поле -->
+      <div id="game"></div>
 
+      <!-- Панель управления -->
+      <div style="width:320px">
+        <div id="controls">
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="green-btn" onclick="setMode('green')">Green</button>
+            <button class="yellow-btn" onclick="setMode('yellow')">Yellow</button>
+            <button class="red-btn" onclick="setMode('red')">Red</button>
+          </div>
+          <div style="margin-top:12px">
+            <button onclick="dropBall()">Drop Ball</button>
+          </div>
+        </div>
+
+        <!-- Статус -->
+        <div id="status" class="muted small" style="margin-top:15px">
+          Последний выигрыш: <strong><span id="lastWin">0</span> $</strong>
+        </div>
+      </div>
     </div>
+  </div>
+</section>
+
+
+<!-- Miner -->
+<section id="miner" class="panelView" style="display:none">
+  <h3>Miner — не попади на мину</h3>
+  <div style="display:flex;gap:20px;flex-wrap:wrap">
+    <div>
+      <div style="margin:10px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <label class="muted small">Мины:
+          <input id="minerMinesInput" type="number" min="3" max="24" value="5" style="width:70px;margin-left:6px">
+        </label>
+        <button id="minerStartBtn">Начать раунд</button>
+        <button id="minerCashoutBtn" disabled>Забрать</button>
+        <span class="muted small">Коэфф: <strong id="minerCoef">×1.00</strong></span>
+      </div>
+
+      <!-- игровое поле -->
+      <div id="minerBoard" class="miner-board"></div>
+
+      <!-- статус -->
+      <div id="minerStatus" class="muted small" style="margin-top:10px">
+        Нажми «Начать раунд», затем открывай клетки.
+      </div>
+    </div>
+  </div>
+</section>
+
+  </div>
 
     <footer><div class="small">Сделано для демонстрации. Никаких реальных денег.</div></footer>
   </main>
 </div>
-
 <script>
 /* ---------- Utilities ---------- */
 const rng = {

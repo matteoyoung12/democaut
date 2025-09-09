@@ -1,0 +1,23 @@
+.slot-grid{display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:8px;padding:8px;
+    background:linear-gradient(180deg,#03121a,#021019);
+    border-radius:8px
+}
+  .slot-cell{height:88px;
+    border-radius:8px;
+    background:linear-gradient(180deg,#071a27,#05101a);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:28px;
+    font-weight:800; 
+    position:relative;
+}
+  .slot-cell.win::after{ 
+    content:"";
+    position:absolute;
+    inset:0;
+    border-radius:8px; 
+    box-shadow:0 0 0 2px var(--win) inset, 0 0 16px var(--win);
+ }

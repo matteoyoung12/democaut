@@ -1,4 +1,3 @@
-/* ---------- Utilities ---------- */
 const rng = {
   n(max){
     if(window.crypto && crypto.getRandomValues){
@@ -12,8 +11,16 @@ const rng = {
   pick(arr){return arr[this.n(arr.length)]}
 };
 
-function saveState(k,v){try{localStorage.setItem(k, JSON.stringify(v))}catch(e){}}
-function loadState(k,def){try{return JSON.parse(localStorage.getItem(k)) ?? def}catch(e){return def}}
+function saveState(k,v){
+  try{
+  localStorage.setItem(k, JSON.stringify(v))}
+  catch(e){}
+}
+function loadState(k,def){
+  try{
+    return JSON.parse(localStorage.getItem(k)) ?? def
+  }
+    catch(e){return def}}
 
 let state = { balance: loadState('demo_balance', 1000), bet: loadState('demo_bet', 10) };
 function formatMoney(v){ return Math.round(v*100)/100; }
@@ -24,7 +31,10 @@ const betInput = document.getElementById('betInput');
 const currentBetText = document.getElementById('currentBetText');
 const giveBonusBtn = document.getElementById('giveBonus');
 
-function refreshUI(){ balanceEl.textContent = formatMoney(state.balance); betInput.value = state.bet; currentBetText.textContent = state.bet; }
+function refreshUI(){
+   balanceEl.textContent = formatMoney(state.balance); 
+   betInput.value = state.bet; 
+   currentBetText.textContent = state.bet; }
 refreshUI();
 
 betInput.addEventListener('change', e=>{
@@ -35,17 +45,42 @@ giveBonusBtn.addEventListener('click', ()=>{ state.balance += 100; saveState('de
 
 /* ---------- Navigation ---------- */
 const items = document.querySelectorAll('.game-item');
-const panels = {blackjack:document.getElementById('blackjack'), baccarat:document.getElementById('baccarat'), slot:document.getElementById('slot'), wheel:document.getElementById('wheel')}
-const titles = {
-  blackjack:['Blackjack','Классическая игра 21'],
-  baccarat:['Baccarat','Ставки: Player / Banker / Tie'],
-  slot:['Slot 3×5','5 барабанов, 3 ряда, 20 линий'],
-  wheel:['Колесо фортуны','Множители и удача']
+const panels = {
+  blackjack: document.getElementById('blackjack'),
+  baccarat: document.getElementById('baccarat'),
+  slot: document.getElementById('slot'),
+  wheel: document.getElementById('wheel'),
+  plinko: document.getElementById('plinko'),
+  miner : document.getElementById('miner')
 };
-let active='blackjack';
-items.forEach(it=>{ it.addEventListener('click', ()=>{ setActive(it.dataset.game) }); });
-function setActive(name){ active=name; document.getElementById('gameTitle').textContent=titles[name][0]; document.getElementById('gameSubtitle').textContent=titles[name][1]; Object.values(panels).forEach(p=>p.style.display='none'); panels[name].style.display='block'; }
+
+const titles = {
+  blackjack: ['Blackjack','Классическая игра 21'],
+  baccarat: ['Baccarat','Ставки: Player / Banker / Tie'],
+  slot: ['Slot 3×5','5 барабанов, 3 ряда, 20 линий'],
+  wheel: ['Колесо фортуны','Множители и удача'],
+  plinko: ['Plinko','Игра с мячиками и платформами'],
+  miner: ['Miner','Не попади на мину']
+};
+
+let active = 'blackjack';
+items.forEach(it=>{
+  it.addEventListener('click', ()=>{
+    setActive(it.dataset.game);
+  });
+});
+
+function setActive(name){
+  active = name;
+  document.getElementById('gameTitle').textContent = titles[name][0];
+  document.getElementById('gameSubtitle').textContent = titles[name][1];
+
+  Object.values(panels).forEach(p => p.style.display = 'none');
+  panels[name].style.display = 'block';
+}
+
 setActive('blackjack');
+
 
 /* ---------- Helpers for bets ---------- */
 function canBet(){ return state.balance >= state.bet && state.bet>0; }
@@ -55,27 +90,51 @@ function pay(amount){ state.balance = Math.round((state.balance + amount)*100)/1
 /* ---------------- BLACKJACK ---------------- */
 const deckRanks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const suits = ['♠','♥','♦','♣'];
+
 function newDeck(numDecks=6){
-  const d = []; for(let s of suits) for(let r of deckRanks) d.push({r,s});
-  let big=[]; for(let i=0;i<numDecks;i++) big = big.concat(d.map(x=>({...x})));
-  for(let i=big.length-1;i>0;i--){ const j=rng.n(i+1); [big[i],big[j]]=[big[j],big[i]]; }
+  const d = [];
+  for(let s of suits) for(let r of deckRanks) d.push({r,s});
+  let big=[];
+  for(let i=0;i<numDecks;i++) big = big.concat(d.map(x=>({...x})));
+  for(let i=big.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [big[i],big[j]]=[big[j],big[i]];
+  }
   return big;
 }
-function cardValueBJ(card){ if(card.r==='A') return 1; if(['J','Q','K'].includes(card.r)) return 10; return Number(card.r); }
-function sumHand(cards){ let sum=0, aces=0; for(let c of cards){ sum += cardValueBJ(c); if(c.r==='A') aces++; } for(let i=0;i<aces;i++){ if(sum+10<=21) sum+=10; } return sum; }
+function cardValueBJ(card){
+  if(card.r==='A') return 1;
+  if(['J','Q','K'].includes(card.r)) return 10;
+  return Number(card.r);
+}
+function sumHand(cards){
+  let sum=0, aces=0;
+  for(let c of cards){ sum += cardValueBJ(c); if(c.r==='A') aces++; }
+  for(let i=0;i<aces;i++){ if(sum+10<=21) sum+=10; }
+  return sum;
+}
 
 let bjDeck = newDeck(4);
 let bjPlayer = [], bjDealer = [], dealerHidden=true;
 const bjLog = document.getElementById('bjLog');
 
-function makeCardEl(c, small=false){ const div=document.createElement('div'); div.className='card'+(small?' small':'')+' fade-in'; div.innerHTML=`<div>${c.r}${c.s}</div><div class="suit">${c.s}</div>`; return div; }
-function makeBackEl(small=false){ const div=document.createElement('div'); div.className='card back'+(small?' small':'')+' fade-in'; div.textContent='★'; return div; }
+function makeCardEl(c, small=false){
+  const div=document.createElement('div');
+  div.className='card'+(small?' small':'')+' fade-in';
+  div.innerHTML=`<div>${c.r}${c.s}</div><div class="suit">${c.s}</div>`;
+  return div;
+}
+function makeBackEl(small=false){
+  const div=document.createElement('div');
+  div.className='card back'+(small?' small':'')+' fade-in';
+  div.textContent='★';
+  return div;
+}
 
 function renderBJ(){
   const ph = document.getElementById('playerHand');
   const dh = document.getElementById('dealerHand');
   ph.innerHTML=''; dh.innerHTML='';
-  // Dealer: first open, second hidden until stand
   if(bjDealer.length){
     dh.appendChild(makeCardEl(bjDealer[0]));
     if(bjDealer[1]) dh.appendChild(dealerHidden ? makeBackEl() : makeCardEl(bjDealer[1]));
@@ -89,10 +148,19 @@ function appendBJLog(txt,cls=''){ bjLog.insertAdjacentHTML('afterbegin', `<div c
 
 function reshuffleIfNeeded(){ if(bjDeck.length<15) bjDeck=newDeck(4); }
 
+function enableBJControls(active){
+  document.getElementById('bjHit').disabled = !active;
+  document.getElementById('bjStand').disabled = !active;
+}
+
 function bjStart(){
   if(!canBet()){ appendBJLog('Недостаточно средств для ставки','log-lose'); return; }
-  takeBet(); reshuffleIfNeeded(); bjPlayer=[]; bjDealer=[]; dealerHidden=true; renderBJ();
-  // deal with slight delays
+  takeBet(); // списываем ставку
+
+  reshuffleIfNeeded(); bjPlayer=[]; bjDealer=[]; dealerHidden=true; renderBJ();
+  enableBJControls(true);
+
+  // deal
   bjPlayer.push(bjDeck.pop()); renderBJ();
   setTimeout(()=>{ bjDealer.push(bjDeck.pop()); renderBJ();
     setTimeout(()=>{ bjPlayer.push(bjDeck.pop()); renderBJ();
@@ -104,25 +172,69 @@ function bjStart(){
 
 function bjCheckBlackjack(){
   const p=sumHand(bjPlayer), d=sumHand(bjDealer);
-  if(p===21 && d!==21){ appendBJLog('Blackjack! Выплата 1.5×','log-win'); pay(state.bet*2.5); }
-  else if(p===21 && d===21){ appendBJLog('Ничья (оба Blackjack). Возврат ставки.'); pay(state.bet); }
+  if(p===21 && d!==21){ 
+    appendBJLog('Blackjack! Выплата 1.5×','log-win'); 
+    pay(state.bet*2.5); 
+    enableBJControls(false); 
+  }
+  else if(p===21 && d===21){ 
+    appendBJLog('Ничья (оба Blackjack). Возврат ставки.'); 
+    pay(state.bet); 
+    enableBJControls(false); 
+  }
 }
 
-function bjHit(){ if(!bjPlayer.length){ appendBJLog('Нажмите Deal прежде чем брать карты.'); return;} bjPlayer.push(bjDeck.pop()); renderBJ(); const s=sumHand(bjPlayer); appendBJLog('Игрок взял карту. Сумма: '+s); if(s>21){ appendBJLog('Перебор! Вы проиграли.','log-lose'); } }
-
-function bjStand(){ if(!bjPlayer.length){ appendBJLog('Нажмите Deal прежде чем стоять.'); return;} dealerHidden=false; renderBJ();
-  // dealer draws to 17
-  (function dealerPlay(){ const ds=sumHand(bjDealer); if(ds<17){ setTimeout(()=>{ bjDealer.push(bjDeck.pop()); renderBJ(); dealerPlay(); }, 250); } else { bjFinish(); } })();
+function bjHit(){
+  if(!bjPlayer.length){ appendBJLog('Нажмите Deal прежде чем брать карты.'); return;}
+  bjPlayer.push(bjDeck.pop());
+  renderBJ();
+  const s=sumHand(bjPlayer);
+  appendBJLog('Игрок взял карту. Сумма: '+s);
+  if(s>21){
+    appendBJLog('Перебор! Вы проиграли.','log-lose');
+    dealerHidden = false;
+    renderBJ();
+    enableBJControls(false);
+    // ставка проиграна, поэтому ничего не возвращаем
+  }
 }
 
-function bjFinish(){ const p=sumHand(bjPlayer), d=sumHand(bjDealer); renderBJ(); if(d>21 || p>d){ appendBJLog(`Вы выиграли! +${formatMoney(state.bet*2)} (выплата включая ставку).`,'log-win'); pay(state.bet*2); }
-  else if(p===d){ appendBJLog('Ничья — ставка возвращена.'); pay(state.bet); }
-  else { appendBJLog('Дилер выиграл — ставка потеряна.','log-lose'); }
+function bjStand(){
+  if(!bjPlayer.length){ appendBJLog('Нажмите Deal прежде чем стоять.'); return;}
+  dealerHidden=false; renderBJ();
+  (function dealerPlay(){
+    const ds=sumHand(bjDealer);
+    if(ds<17){ setTimeout(()=>{ bjDealer.push(bjDeck.pop()); renderBJ(); dealerPlay(); }, 250); }
+    else { bjFinish(); }
+  })();
+}
+
+function bjFinish(){
+  const p=sumHand(bjPlayer), d=sumHand(bjDealer);
+  renderBJ();
+  if(p>21){ 
+    appendBJLog('Перебор! Вы проиграли.','log-lose'); 
+    enableBJControls(false); 
+    return; 
+  }
+  if(d>21 || p>d){ 
+    appendBJLog(`Вы выиграли! +${state.bet*2}`,'log-win'); 
+    pay(state.bet*2); 
+  }
+  else if(p===d){ 
+    appendBJLog('Ничья — ставка возвращена.'); 
+    pay(state.bet); 
+  }
+  else { 
+    appendBJLog('Дилер выиграл — ставка потеряна.','log-lose'); 
+  }
+  enableBJControls(false);
 }
 
 document.getElementById('bjDeal').addEventListener('click', bjStart);
 document.getElementById('bjHit').addEventListener('click', bjHit);
 document.getElementById('bjStand').addEventListener('click', bjStand);
+
 
 /* ---------------- BACCARAT ---------------- */
 let bDeck = newDeck(6);
@@ -366,6 +478,232 @@ function spinWheelOnce(){
 
 document.getElementById('spinWheel').addEventListener('click', spinWheelOnce);
 document.getElementById('autoSpin').addEventListener('click', ()=>{ let i=0; function next(){ if(i>=5) return; spinWheelOnce(); i++; setTimeout(next, 1200);} next(); });
+
+/* ---------------- PLINKO ---------------- */
+const game = document.getElementById("game");
+const lastWinEl = document.getElementById("lastWin"); // вывод последнего выигрыша
+let slots = [];
+let multipliers = [];
+let currentMode = "green";
+
+// Пины
+function createPins(rows = 12) {
+  const fieldWidth = 500;  // фикс как в CSS
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col <= row; col++) {
+      const pin = document.createElement("div");
+      pin.className = "pin";
+
+      // центрирование
+      const x = fieldWidth / 2 - row * 20 + col * 40;
+      const y = 40 + row * 40;
+
+      pin.style.left = x + "px";
+      pin.style.top = y + "px";
+
+      game.appendChild(pin);
+    }
+  }
+}
+
+// Слоты
+function createSlots() {
+  const baseMultipliers = {
+    green: [18,3.2,1.6,1.3,1.2,1.1,0.5,1.1,1.2,1.3,1.6,3.2,18],
+    yellow:[55,5.6,3.2,1.6,1.3,1.2,0.7,1.2,1.3,1.6,3.2,5.6,55],
+    red:   [353,49,14,5.3,2.1,0.5,0.2,0.5,2.1,5.3,14,49,353]
+  };
+
+  multipliers = baseMultipliers[currentMode];
+  slots.forEach(s => s.remove());
+  slots = [];
+
+  const width = 500 / multipliers.length;
+
+  multipliers.forEach((m, i) => {
+    const slot = document.createElement("div");
+    slot.className = "slot " + currentMode;
+    slot.style.left = i * width + "px";
+    slot.style.bottom = "0";   // фиксируем у низа поля
+    slot.style.width = width + "px";
+    slot.textContent = m + "x";
+    game.appendChild(slot);
+    slots.push(slot);
+  });
+}
+
+
+// Режим
+function setMode(mode) {
+  currentMode = mode;
+  createSlots();
+}
+
+// Падение шарика
+function dropBall() {
+  if (!canBet()) {
+    alert("Недостаточно средств для ставки");
+    return;
+  }
+
+  const bet = state.bet;
+  takeBet();
+
+  const ball = document.createElement("div");
+  ball.className = "ball";
+  game.appendChild(ball);
+
+  let x = game.clientWidth / 2;
+  let y = 0;
+
+  const interval = setInterval(() => {
+    y += 40;
+    x += Math.random() < 0.5 ? -20 : 20;
+
+    if (y >= 480) {
+      clearInterval(interval);
+      const slotIndex = Math.floor(x / (500 / multipliers.length));
+      const mult = multipliers[slotIndex] || 0;
+      const win = Math.round(bet * mult * 100) / 100;
+
+      if (win > 0) {
+        pay(win);
+      }
+
+      lastWinEl.textContent = win.toFixed(2);
+
+      setTimeout(() => ball.remove(), 1000);
+    }
+
+    ball.style.top = y + "px";
+    ball.style.left = x + "px";
+  }, 200);
+}
+
+// Инициализация
+createPins();
+createSlots();
+/* ------------- Miner ------------- */
+// Miner
+let minerCells = 25;
+let mines = [];
+let opened = 0;
+let currentCoeff = 1;
+let gameActive = false;
+let minerBet = 0;
+
+const board = document.getElementById("minerBoard");
+const minesInput = document.getElementById("minerMinesInput");
+const coefLabel = document.getElementById("minerCoef");
+const statusLabel = document.getElementById("minerStatus");
+const startBtn = document.getElementById("minerStartBtn");
+const cashoutBtn = document.getElementById("minerCashoutBtn");
+
+// баланс общий
+const balanceBox = document.getElementById("balance");
+
+
+startBtn.addEventListener("click", startMiner);
+cashoutBtn.addEventListener("click", cashOut);
+
+function startMiner() {
+  let balance = parseFloat(balanceBox.textContent);
+  minerBet = parseFloat(betInput.value) || 10;
+
+  if (minerBet > balance) {
+    statusLabel.textContent = "Недостаточно средств!";
+    return;
+  }
+
+  // списываем ставку
+  balance -= minerBet;
+  balanceBox.textContent = balance.toFixed(2);
+
+  const minesCount = Math.min(
+    24,Math.max(1, parseInt(minesInput.value) || 1)
+  );
+
+  opened = 0;
+  currentCoeff = 1;
+  gameActive = true;
+  mines = [];
+  cashoutBtn.disabled = false;
+  statusLabel.textContent = "Игра началась! Открывай клетки.";
+
+  board.innerHTML = "";
+  for (let i = 0; i < minerCells; i++) {
+    const cell = document.createElement("div");
+    cell.className = "miner-cell";
+    cell.dataset.index = i;
+    cell.addEventListener("click", () => clickCell(i, cell));
+    board.appendChild(cell);
+  }
+
+  // ставим мины
+  while (mines.length < minesCount) {
+    let r = Math.floor(Math.random() * minerCells);
+    if (!mines.includes(r)) mines.push(r);
+  }
+
+  coefLabel.textContent = "×1.00";
+}
+
+function clickCell(index, cell) {
+  if (!gameActive || cell.classList.contains("open")) return;
+
+  if (mines.includes(index)) {
+    cell.classList.add("open", "mine");
+    statusLabel.textContent = "💥 Мина! Раунд окончен.";
+    gameOver(false);
+    return;
+  }
+
+  cell.classList.add("open", "safe");
+  opened++;
+  updateCoeff();
+}
+
+function updateCoeff() {
+  let safeLeft = minerCells - opened - mines.length;
+  let totalLeft = minerCells - opened;
+
+  if (safeLeft > 0) {
+    let step = totalLeft / safeLeft;
+    currentCoeff *= step;
+    coefLabel.textContent = "×" + currentCoeff.toFixed(2);
+    statusLabel.textContent = "Открыл клетку. Играй дальше или забери!";
+  }
+}
+
+function cashOut() {
+  if (!gameActive) return;
+  let balance = parseFloat(balanceBox.textContent);
+
+  let win = minerBet * currentCoeff;
+  balance += win;
+  balanceBox.textContent = balance.toFixed(2);
+
+  statusLabel.textContent =
+    "✅ Забрал " + win.toFixed(2) + " $ с коэфф. " + currentCoeff.toFixed(2);
+
+  gameOver(true);
+}
+
+function gameOver(won) {
+  gameActive = false;
+  cashoutBtn.disabled = true;
+
+  // показать все клетки
+  const cells = board.querySelectorAll(".miner-cell");
+  cells.forEach((cell, i) => {
+    if (mines.includes(i)) {
+      cell.classList.add("reveal", "mine");
+    } else if (!cell.classList.contains("open")) {
+      cell.classList.add("reveal", "safe");
+    }
+  });
+}
+
 
 /* ---------- Init ---------- */
 refreshUI();
